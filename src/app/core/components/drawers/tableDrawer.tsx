@@ -62,16 +62,15 @@ function Test1Component(properties: Record<string, property>): Record<string, Re
     let child: Record<string, React.JSX.Element> = {}, childElement: React.JSX.Element[] = []
     for (const [key, value] of Object.entries(properties)) {
         if (!value) return response
-        const parentsList = getParents(value)
         switch (value.datatype) {
             case 'textField':
-                response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={ _ => handleTextChange(value)} />
+                response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={_ => handleTextChange(value)} />
                 break;
             case "multiline":
-                response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={ _ => handleTextChange(value)} />
+                response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={_ => handleTextChange(value)} />
                 break;
             case "url":
-                response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={ _ => handleTextChange(value)} />
+                response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={_ => handleTextChange(value)} />
                 break;
             case "map":
                 if (value.properties) {
@@ -89,18 +88,16 @@ function Test1Component(properties: Record<string, property>): Record<string, Re
             case "list":
                 if (value.of?.value) {
                     value.of.value.forEach((inValue, index) => {
-                        let parent = { slug: `${index}`, name: "", datatype: "", parent: value }
                         childElement.push(
                             <AccordionItem key={`accor${index}`} subtitle={index + 1} textValue={`${index}`}>
                                 {typeof inValue === "string" ?
-                                    <Input key={`elem-${index}`} value={inValue} onValueChange={ _ => handleTextChange(value)} />
+                                    <Input key={`elem-${index}`} value={inValue} onValueChange={_ => handleTextChange(value)} />
                                     :
                                     Object.entries(inValue).map((entry, i) => {
-                                        const [inKey1, inValue1] = entry
-                                        inValue1.parent = parent
-                                        console.log(inValue1)
+                                        const [inKey, inValue] = entry
+                                        let entry2 = {...inValue, parent: { slug: `${index}`, name: "", datatype: "", parent: value }}
                                         return <div style={{ marginBottom: "10px" }} key={`prop-${i}`}>
-                                            {Test1Component({ [inKey1]: inValue1 })[inKey1]}
+                                            {Test1Component({ [inKey]: entry2 })[inKey]}
                                         </div>
                                     })
                                 }

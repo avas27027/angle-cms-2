@@ -1,0 +1,19 @@
+@use "tailwindcss/base";
+@use "tailwindcss/components";
+@use "tailwindcss/utilities";
+@use './app/styles' as *;
+
+body {
+    @include theme-updater();
+}
+
+h1 {
+    font-size: 1.2rem;
+}
+h2 {
+    font-size: 1.1rem;
+}
+
+a {
+    cursor: pointer;
+}

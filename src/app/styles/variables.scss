@@ -1,0 +1,57 @@
+$theme-name: dark;
+
+$small: 576px;
+$medium: 768px;
+$large: 992px;
+$xlarge: 1200px;
+
+//$primary-font-family: "Lato";
+//$secondary-font-family: "Comfortaa";
+//$third-font-family: "RockoFLF";
+
+$primary-font-family: "Lovelace";
+$secondary-font-family: "Open Sans";
+$third-font-family: "RockoFLF";
+
+$themes: (
+    modern: (background: #18181c,
+        foreground : #ffffff,
+        focus: #0070f4,
+        primary: (50 : #f1ebff,
+            100: #d8d8dd,
+            200: #bfbfc1,
+            300: #a5a5a7,
+            400: #8b8b8c,
+            500: #727273,
+            600: #58585a,
+            700: #3f3f41,
+            800: #26262a,
+            900: #16090d,
+            DEFAULT: #9F9FA1),
+    ),
+    light1: (background: #ffffff,
+        foreground : #000000,
+        focus: #ffdb15,
+        primary: (50 : #f3f6ef,
+            100: #e5eadd,
+            200: #cdd8be,
+            300: #acbf97,
+            400: #8ea675,
+            500: #78925d,
+            600: #586d43,
+            700: #455536,
+            800: #39452f,
+            900: #323c2b,
+            DEFAULT: #78925d),
+    ),
+    dark1: (primary_color: (31, 255, 34),
+        secondary_color: (255, 255, 255),
+        inputs_colors: (88, 176, 103),
+        text_color: (255, 255, 255),
+        secondary_text_color: (128, 128, 128),
+        background_color: (0, 0, 0),
+        background_opocite_color: (255, 255, 255),
+        remark_color: (181, 222, 0),
+        container_color: (77, 76, 76),
+    ),
+);

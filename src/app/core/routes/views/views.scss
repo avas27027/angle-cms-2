@@ -1,0 +1,53 @@
+.views {
+    padding: 10px 10%;
+
+    .title {
+        padding: 10px 0;
+        border-bottom: 1px solid var(--primary-500);
+        margin-bottom: 20px;
+    }
+
+    .grid-views {
+        display: grid;
+        grid-template-columns: repeat(3, 33%);
+        grid-gap: 10px;
+
+        .collection-card {
+            border: 1px solid var(--primary-500);
+            border-radius: 5px;
+            padding: 10px;
+
+            span {
+                color: var(--focus);
+            }
+
+            .icons {
+                display: flex;
+                justify-content: end;
+                gap: 5px;
+
+                a {
+                    svg {
+                        font-size: 1.2rem;
+                    }
+                }
+            }
+
+            .content {
+                min-height: 150px;
+            }
+
+            .search {
+                display: flex;
+                justify-content: end;
+
+                a {
+                    svg {
+                        font-size: 1.5rem;
+                        color: var(--focus);
+                    }
+                }
+            }
+        }
+    }
+}

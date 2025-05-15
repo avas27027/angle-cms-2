@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useReducer, useState } from 'react';
 import { UseDisclosureReturn } from "@heroui/use-disclosure";
 import { Accordion, AccordionItem, Button, Card, CardBody, CardHeader, Drawer, DrawerBody, DrawerContent, DrawerFooter, DrawerHeader, Input, Link, Textarea } from '@heroui/react';
-import { property, PropertyValues } from '../../types';
+import { parsePropertyToValues, property, PropertyValues } from '../../types';
 
 interface TableDrawerProps {
     disclosure: UseDisclosureReturn
@@ -20,6 +20,72 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, properties
         else response = Test1Component(properties)
         return response
     }, [properties, initValue])
+
+    const handleTextChange = (property: property, value: string) => {
+        let response: PropertyValues = parsePropertyToValues(initValue ? initValue : properties)//{nombre:"asd",path:"asd",banner:{slider:{},titulo:"titulo 1"}}
+        const parents = getParents(property)
+        parents.push(value)
+
+        console.log(addToObject(response, parents.reverse()))
+    }
+
+    function Test1Component(properties: Record<string, property>): Record<string, React.JSX.Element> {
+        let response: Record<string, React.JSX.Element> = {}
+        let child: Record<string, React.JSX.Element> = {}, childElement: React.JSX.Element[] = []
+        for (const [key, value] of Object.entries(properties)) {
+            if (!value) return response
+            switch (value.datatype) {
+                case 'textField':
+                    response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={val => handleTextChange(value, val)} />
+                    break;
+                case "multiline":
+                    response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={val => handleTextChange(value, val)} />
+                    break;
+                case "url":
+                    response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={val => handleTextChange(value, val)} />
+                    break;
+                case "map":
+                    if (value.properties) {
+                        Object.entries(value.properties).map((entry, i) => {
+                            const [inKey, inValue] = entry
+                            inValue.parent = value
+                            child[inKey] = Test1Component({ [inKey]: inValue })[inKey]
+                            if (child[inKey] !== undefined) {
+                                childElement.push(<div style={{ marginBottom: "10px" }} key={`prop-${i}`}>{child[inKey]}</div>)
+                            }
+                        })
+                    }
+                    response[key] = <MapComponent key={key} name={value.name} child={childElement} />
+                    break;
+                case "list":
+                    if (value.of?.value) {
+                        value.of.value.forEach((inValue, index) => {
+                            childElement.push(
+                                <AccordionItem key={`accor${index}`} subtitle={index + 1} textValue={`${index}`}>
+                                    {typeof inValue === "string" ?
+                                        <Input key={`elem-${index}`} value={inValue} onValueChange={val => handleTextChange(value, val)} />
+                                        :
+                                        Object.entries(inValue).map((entry, i) => {
+                                            const [inKey, inValue] = entry
+                                            let entry2 = { ...inValue, parent: { slug: `${index}`, name: "", datatype: "", parent: value } }
+                                            return <div style={{ marginBottom: "10px" }} key={`prop-${i}`}>
+                                                {Test1Component({ [inKey]: entry2 })[inKey]}
+                                            </div>
+                                        })
+                                    }
+                                </AccordionItem>
+                            )
+                        });
+
+                    }
+                    response[key] = <ListComponent key={key} name={value.name} child={childElement} />
+                    break;
+                default:
+                    break;
+            }
+        }
+        return response
+    }
 
     return (
         <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
@@ -47,9 +113,20 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, properties
 
 export default TableDrawer;
 
-const handleTextChange = (value: property) => {
-    const parents = getParents(value)
-    console.log(parents)
+
+const addToObject = (response: PropertyValues, parents: string[]): PropertyValues | PropertyValues[] => {
+    if (parents.length <= 1) return {}
+    if (parents.length === 2) { response[parents[1]] = parents[0]; return response }
+    let current = parents.pop()!
+    let next = parents[parents.length - 1]
+    //console.log(next)
+    if (!isNaN(Number(next)) && !isNaN(parseFloat(next))) {
+        (response[current] as PropertyValues[])[Number(next)] = (addToObject({ ...response[current] as PropertyValues }, parents) as PropertyValues)[next] as PropertyValues
+    }
+    else {
+        response[current] = { ...response[current] as PropertyValues, ...addToObject({ ...response[current] as PropertyValues }, parents) }
+    }
+    return response
 }
 const getParents = (parent?: property): string[] => {
     if (!parent) return []
@@ -57,63 +134,7 @@ const getParents = (parent?: property): string[] => {
     response.push(parent.slug)
     return response
 }
-function Test1Component(properties: Record<string, property>): Record<string, React.JSX.Element> {
-    let response: Record<string, React.JSX.Element> = {}
-    let child: Record<string, React.JSX.Element> = {}, childElement: React.JSX.Element[] = []
-    for (const [key, value] of Object.entries(properties)) {
-        if (!value) return response
-        switch (value.datatype) {
-            case 'textField':
-                response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={_ => handleTextChange(value)} />
-                break;
-            case "multiline":
-                response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={_ => handleTextChange(value)} />
-                break;
-            case "url":
-                response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={_ => handleTextChange(value)} />
-                break;
-            case "map":
-                if (value.properties) {
-                    Object.entries(value.properties).map((entry, i) => {
-                        const [inKey, inValue] = entry
-                        inValue.parent = value
-                        child[inKey] = Test1Component({ [inKey]: inValue })[inKey]
-                        if (child[inKey] !== undefined) {
-                            childElement.push(<div style={{ marginBottom: "10px" }} key={`prop-${i}`}>{child[inKey]}</div>)
-                        }
-                    })
-                }
-                response[key] = <MapComponent key={key} name={value.name} child={childElement} />
-                break;
-            case "list":
-                if (value.of?.value) {
-                    value.of.value.forEach((inValue, index) => {
-                        childElement.push(
-                            <AccordionItem key={`accor${index}`} subtitle={index + 1} textValue={`${index}`}>
-                                {typeof inValue === "string" ?
-                                    <Input key={`elem-${index}`} value={inValue} onValueChange={_ => handleTextChange(value)} />
-                                    :
-                                    Object.entries(inValue).map((entry, i) => {
-                                        const [inKey, inValue] = entry
-                                        let entry2 = {...inValue, parent: { slug: `${index}`, name: "", datatype: "", parent: value }}
-                                        return <div style={{ marginBottom: "10px" }} key={`prop-${i}`}>
-                                            {Test1Component({ [inKey]: entry2 })[inKey]}
-                                        </div>
-                                    })
-                                }
-                            </AccordionItem>
-                        )
-                    });
 
-                }
-                response[key] = <ListComponent key={key} name={value.name} child={childElement} />
-                break;
-            default:
-                break;
-        }
-    }
-    return response
-}
 
 function MapComponent(props: { child?: React.JSX.Element | React.JSX.Element[], name: string }) {
     return (

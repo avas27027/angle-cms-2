@@ -62,3 +62,24 @@ export const parsePropertyValues = (properties: Record<string, property>, values
   }
   return parseProperty
 }
+export const parsePropertyToValues = (properties: Record<string, property>): PropertyValues => {
+  let parseProperty: PropertyValues = {}
+  for (let key in properties) {
+    if (properties[key].datatype === 'map' && properties[key].properties) {
+      parseProperty[key] = parsePropertyToValues(properties[key].properties)
+    }
+    else if (properties[key].datatype === 'list' && properties[key].of && properties[key].of.value) {
+      parseProperty[key] = properties[key].of.value.map((e) => {
+        if (typeof e === "string") return e
+        if (properties[key].of?.properties && Object.keys(e).length > 0 ) {
+          return parsePropertyToValues(properties[key].of.properties)
+        }
+        return ""
+      })
+    }
+    else {
+      parseProperty[key] = properties[key].value
+    }
+  }
+  return parseProperty
+}

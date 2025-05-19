@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useReducer, useState } from 'react';
+import React, { useMemo, useReducer } from 'react';
 import { UseDisclosureReturn } from "@heroui/use-disclosure";
-import { Accordion, AccordionItem, Button, Card, CardBody, CardHeader, Drawer, DrawerBody, DrawerContent, DrawerFooter, DrawerHeader, Input, Link, Textarea } from '@heroui/react';
+import { AccordionItem, Button, Drawer, DrawerBody, DrawerContent, DrawerFooter, DrawerHeader, Input, Link } from '@heroui/react';
 import { parsePropertyToValues, property, PropertyValues } from '../../types';
+import { ListComponent, MapComponent } from '../inputs/inputsComponents';
 
 interface TableDrawerProps {
     disclosure: UseDisclosureReturn
@@ -16,20 +17,20 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, properties
     const { isOpen, onOpenChange } = disclosure;
     const inputs = useMemo(() => {
         let response: Record<string, React.JSX.Element> = {}
-        if (initValue) response = Test1Component(initValue)
-        else response = Test1Component(properties)
+        if (initValue) response = FormComponent(initValue)
+        else response = FormComponent(properties)
         return response
     }, [properties, initValue])
 
     const handleTextChange = (property: property, value: string) => {
-        let response: PropertyValues = parsePropertyToValues(initValue ? initValue : properties)//{nombre:"asd",path:"asd",banner:{slider:{},titulo:"titulo 1"}}
+        let response: PropertyValues = parsePropertyToValues(initValue ? initValue : properties)
         const parents = getParents(property)
         parents.push(value)
 
         console.log(addToObject(response, parents.reverse()))
     }
 
-    function Test1Component(properties: Record<string, property>): Record<string, React.JSX.Element> {
+    function FormComponent(properties: Record<string, property>): Record<string, React.JSX.Element> {
         let response: Record<string, React.JSX.Element> = {}
         let child: Record<string, React.JSX.Element> = {}, childElement: React.JSX.Element[] = []
         for (const [key, value] of Object.entries(properties)) {
@@ -49,7 +50,7 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, properties
                         Object.entries(value.properties).map((entry, i) => {
                             const [inKey, inValue] = entry
                             inValue.parent = value
-                            child[inKey] = Test1Component({ [inKey]: inValue })[inKey]
+                            child[inKey] = FormComponent({ [inKey]: inValue })[inKey]
                             if (child[inKey] !== undefined) {
                                 childElement.push(<div style={{ marginBottom: "10px" }} key={`prop-${i}`}>{child[inKey]}</div>)
                             }
@@ -69,7 +70,7 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, properties
                                             const [inKey, inValue] = entry
                                             let entry2 = { ...inValue, parent: { slug: `${index}`, name: "", datatype: "", parent: value } }
                                             return <div style={{ marginBottom: "10px" }} key={`prop-${i}`}>
-                                                {Test1Component({ [inKey]: entry2 })[inKey]}
+                                                {FormComponent({ [inKey]: entry2 })[inKey]}
                                             </div>
                                         })
                                     }
@@ -116,16 +117,15 @@ export default TableDrawer;
 
 const addToObject = (response: PropertyValues, parents: string[]): PropertyValues | PropertyValues[] => {
     if (parents.length <= 1) return {}
+    // Set the last element as the value
     if (parents.length === 2) { response[parents[1]] = parents[0]; return response }
     let current = parents.pop()!
     let next = parents[parents.length - 1]
-    //console.log(next)
+    // Check if is a list, because the next element is a number
     if (!isNaN(Number(next)) && !isNaN(parseFloat(next))) {
         (response[current] as PropertyValues[])[Number(next)] = (addToObject({ ...response[current] as PropertyValues }, parents) as PropertyValues)[next] as PropertyValues
     }
-    else {
-        response[current] = { ...response[current] as PropertyValues, ...addToObject({ ...response[current] as PropertyValues }, parents) }
-    }
+    else response[current] = { ...response[current] as PropertyValues, ...addToObject({ ...response[current] as PropertyValues }, parents) }
     return response
 }
 const getParents = (parent?: property): string[] => {
@@ -133,29 +133,4 @@ const getParents = (parent?: property): string[] => {
     let response = getParents(parent.parent)
     response.push(parent.slug)
     return response
-}
-
-
-function MapComponent(props: { child?: React.JSX.Element | React.JSX.Element[], name: string }) {
-    return (
-        <Card>
-            <CardHeader className="flex justify-between">{props.name}<p>map</p></CardHeader>
-            <CardBody>
-                {props.child}
-            </CardBody>
-        </Card>
-    )
-}
-
-function ListComponent(props: { child?: React.JSX.Element | React.JSX.Element[], name: string }) {
-    return (
-        <Card>
-            <CardHeader className="flex justify-between">{props.name}<p>list</p></CardHeader>
-            <CardBody>
-                <Accordion>
-                    {props.child ? props.child : <AccordionItem title="No items"></AccordionItem>}
-                </Accordion>
-            </CardBody>
-        </Card>
-    )
 }

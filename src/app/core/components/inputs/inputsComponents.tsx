@@ -1,6 +1,8 @@
-import { Accordion, AccordionItem, Card, CardBody, CardHeader, Input } from "@heroui/react"
+import { Accordion, AccordionItem, Card, CardBody, CardHeader, Input, Link } from "@heroui/react"
 import { parsePropertyToValues, property, PropertyValues } from "../../types"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { FaTrash } from "react-icons/fa"
+import _, { set } from "lodash"
 
 export function MapComponent(props: { child?: React.JSX.Element | React.JSX.Element[], name: string }) {
     return (
@@ -26,9 +28,11 @@ export function ListComponent(props: { child?: React.JSX.Element | React.JSX.Ele
     )
 }
 
-export function inputsComponents(properties: Record<string, property>) {
-    const [response, setResponse] = useState<{ property: property, value: string } | undefined>()
-    const [inputs, setInputs] = useState({} as Record<string, React.JSX.Element>)
+export function inputsHook(properties: Record<string, property>): [Record<string, React.JSX.Element>, { path: string, value: string } | undefined] {
+    const [response, setResponse] = useState<{ path: string, value: string } | undefined>()
+    const [thisProperties, setThisProperties] = useState<Record<string, property>>({})
+    useEffect(() => {setThisProperties(properties)}, [])
+    const inputs = useMemo(() => { return FormComponent(thisProperties) }, [thisProperties])
 
     const getParents = (parent?: property): string[] => {
         if (!parent) return []
@@ -38,7 +42,24 @@ export function inputsComponents(properties: Record<string, property>) {
     }
 
     const handleTextChange = (property: property, value: string) => {
-        setResponse({ property, value })
+        let path = ''
+        let parents = getParents(property)
+        parents.forEach((element, index) => {
+            if (index === 0) path = element
+            else path += `.${element}`
+        });
+        setResponse({ path, value })
+    }
+
+    const onDeleteArray = (property: property) => {
+        let parents = getParents(property), path = ''
+        parents.forEach((element, index) => {
+            if (index === 0) path = element
+            else path += `.${element}`
+        });
+        let response = _.omit(properties, path)
+        setThisProperties(response)
+        console.log("response", response)
     }
     function FormComponent(properties: Record<string, property>): Record<string, React.JSX.Element> {
         let response: Record<string, React.JSX.Element> = {}
@@ -72,15 +93,17 @@ export function inputsComponents(properties: Record<string, property>) {
                     if (value.of?.value) {
                         value.of.value.forEach((inValue, index) => {
                             childElement.push(
-                                <AccordionItem key={`accor${index}`} subtitle={index + 1} textValue={`${index}`}>
+                                <AccordionItem key={`accor${index}`} textValue={`${index}`}
+                                    subtitle={<div className="flex justify-between"><p>{index + 1}</p><Link onPress={_ => onDeleteArray({ slug: `[${index}]`, name: "", datatype: "", parent: value })}><FaTrash /></Link></div>} >
                                     {typeof inValue === "string" ?
                                         <Input key={`elem-${index}`} value={inValue} onValueChange={val => handleTextChange(value, val)} />
                                         :
                                         Object.entries(inValue).map((entry, i) => {
                                             const [inKey, inValue] = entry
-                                            let entry2 = { ...inValue, parent: { slug: `${index}`, name: "", datatype: "", parent: value } }
+                                            let entry2 = { ...inValue, parent: { slug: `[${index}]`, name: "", datatype: "", parent: value } }
                                             return <div style={{ marginBottom: "10px" }} key={`prop-${i}`}>
                                                 {FormComponent({ [inKey]: entry2 })[inKey]}
+
                                             </div>
                                         })
                                     }

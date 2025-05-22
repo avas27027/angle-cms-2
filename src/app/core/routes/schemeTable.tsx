@@ -15,7 +15,7 @@ export default function SchemeTable() {
     const disclosure = useDisclosure()
     const name = useMemo(() => { return (storage as scheme[]).filter((value) => { if (value.path === path) return value })[0].name }, [path])
     const properties = useMemo(() => {
-        return (storage as scheme[]).filter((value) => { if (value.path === path) return value })[0].properties
+        return (storage as scheme[]).filter((value) => { if (value.path === path) return value })[0].properties!
     }, [path])
 
     const [parseProperties, setParseProperties] = useState<Array<Record<string, property>>>([])
@@ -24,6 +24,7 @@ export default function SchemeTable() {
 
     const [filterValue, setFilterValue] = useState('')
     const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set([]))
+    const initValue = useMemo(() => { return parseProperties[0] != undefined ? parseProperties[0] : properties }, [properties, parseProperties])
 
     useEffect(() => {
         const responseColumns: Array<{ key: string, label: string, property: property }> = []
@@ -95,8 +96,8 @@ export default function SchemeTable() {
             </section>
             {
                 properties ?
-                    <TableDrawer disclosure={disclosure} title={name} properties={properties} initValue={parseProperties[0]} />
-                    : ""
+                    <TableDrawer {...{disclosure, name,  initValue}} />
+                    : null
             }
         </DefaultLayout>
     );

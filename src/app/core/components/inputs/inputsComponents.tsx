@@ -30,7 +30,12 @@ export function inputsComponents(properties: Record<string, property>) {
     const [response, setResponse] = useState<{ property: property, value: string } | undefined>()
     const [inputs, setInputs] = useState({} as Record<string, React.JSX.Element>)
 
-    useEffect(() => {setInputs(FormComponent(properties))}, [])
+    const getParents = (parent?: property): string[] => {
+        if (!parent) return []
+        let response = getParents(parent.parent)
+        response.push(parent.slug)
+        return response
+    }
 
     const handleTextChange = (property: property, value: string) => {
         setResponse({ property, value })

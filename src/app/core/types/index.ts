@@ -41,7 +41,8 @@ export type PropertyValues = {
   [x: string]: string | Array<string | PropertyValues> | PropertyValues | undefined;
 }
 
-export const parsePropertyValues = (properties: Record<string, property>, values: PropertyValues): Record<string, property> => {
+export const parsePropertyValues = (properties: Record<string, property>, values?: PropertyValues): Record<string, property> => {
+  if(values === undefined) return properties
   let parseProperty: Record<string, property> = properties
   for (let key in properties) {
     if (properties[key].datatype === 'map' && Object.keys(values[key]!).length > 0 && properties[key].properties) {

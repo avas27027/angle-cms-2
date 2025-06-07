@@ -1,118 +1,147 @@
-import { Accordion, AccordionItem, Card, CardBody, CardHeader, Input, Link } from "@heroui/react"
-import { parsePropertyToValues, property, PropertyValues } from "../../types"
-import { useEffect, useMemo, useState } from "react"
+import { Accordion, AccordionItem, Button, Card, CardBody, CardHeader, Input, Link } from "@heroui/react"
+import { parsePropertyValues, property } from "../../types"
 import { FaTrash } from "react-icons/fa"
-import _, { set } from "lodash"
+import _ from "lodash"
+import { useDocument } from "../../../shared/context/documentContext"
+import { useMemo } from "react"
 
-export function MapComponent(props: { child?: React.JSX.Element | React.JSX.Element[], name: string }) {
+type MapComponentProps = {
+    name: string,
+    property: property,
+    MapComponent: (properties: Record<string, property>) => Record<string, React.JSX.Element>
+}
+export const MapComponent: React.FC<MapComponentProps> = ({ MapComponent, name, property }) => {
+    const childs = useMemo(() => {
+        let child: Record<string, React.JSX.Element> = {}
+        let childElement: React.JSX.Element[] = []
+        Object.entries(property.properties!).map((entry, i) => {
+            const [inKey, inValue] = entry
+            inValue.parent = property
+            child[inKey] = MapComponent({ [inKey]: inValue })[inKey]
+            if (child[inKey] !== undefined) {
+                childElement.push(<div style={{ marginBottom: "10px" }} key={`prop-${i}`}>{child[inKey]}</div>)
+            }
+        })
+        return childElement
+    }, [property])
+
     return (
         <Card>
-            <CardHeader className="flex justify-between">{props.name}<p>map</p></CardHeader>
+            <CardHeader className="flex justify-between">{name}<p>map</p></CardHeader>
             <CardBody>
-                {props.child}
+                {childs}
             </CardBody>
         </Card>
     )
 }
+type LisComponentType = {
+    name: string,
+    property: property,
+    MapComponent: (properties: Record<string, property>) => Record<string, React.JSX.Element>,
+    onDelete?: (property: property) => void,
+    onChange?: (property: property, value: string) => void,
+    editable?: boolean
+}
+export const ListComponent: React.FC<LisComponentType> = ({ name, property, onChange, onDelete, MapComponent, editable }) => {
+    const childs = useMemo(() => {
+        let childElement: React.JSX.Element[] = []
+        if (property.of?.value === undefined) return childElement
+        property.of.value.forEach((inValue, index) => {
+            childElement.push(
+                <AccordionItem key={`accor${index}`} textValue={`${index}`}
+                    subtitle={
+                        <div className="flex justify-between">
+                            <p>{index + 1}</p>
+                            <Link className={editable ? '' : 'hidden'}
+                                onPress={onDelete ? (_ => onDelete({ slug: `[${index}]`, name: "", datatype: "", parent: property })) : undefined}>
+                                <FaTrash />
+                            </Link>
+                        </div>} >
+                    {typeof inValue === "string" ?
+                        <Input isDisabled={!editable} key={`elem-${index}`} value={inValue} onValueChange={onChange ? (val => onChange(property, val)) : undefined} />
+                        :
+                        Object.entries(inValue).map((entry, i) => {
+                            const [inKey, inValue] = entry
+                            let entry2 = { ...inValue, parent: { slug: `[${index}]`, name: "", datatype: "", parent: property } }
+                            return <div style={{ marginBottom: "10px" }} key={`prop-${i}`}>
+                                {MapComponent({ [inKey]: entry2 })[inKey]}
 
-export function ListComponent(props: { child?: React.JSX.Element | React.JSX.Element[], name: string }) {
+                            </div>
+                        })
+                    }
+                </AccordionItem>
+            )
+        })
+        return childElement
+    }, [property])
     return (
         <Card>
-            <CardHeader className="flex justify-between">{props.name}<p>list</p></CardHeader>
+            <CardHeader className="flex justify-between">{name}<p>list</p></CardHeader>
             <CardBody>
                 <Accordion>
-                    {props.child ? props.child : <AccordionItem title="No items"></AccordionItem>}
+                    {property.of?.value && property.of.value.length > 0 ?
+                        childs : <AccordionItem title="No items"></AccordionItem>
+                    }
                 </Accordion>
+                <Button>+ Add element</Button>
             </CardBody>
         </Card>
     )
 }
 
-export function inputsHook(properties: Record<string, property>): [Record<string, React.JSX.Element>, { path: string, value: string } | undefined] {
-    const [response, setResponse] = useState<{ path: string, value: string } | undefined>()
-    const [thisProperties, setThisProperties] = useState<Record<string, property>>({})
-    useEffect(() => {setThisProperties(properties)}, [])
-    const inputs = useMemo(() => { return FormComponent(thisProperties) }, [thisProperties])
+type InputsComponentsProps = {
+    onDeleteList?: (property: property) => void,
+    onChange?: (property: property, value: string) => void
+    editable?: boolean
+}
+export const InputsComponents: React.FC<InputsComponentsProps> = ({ onDeleteList, onChange, editable }) => {
+    const context = useDocument()
 
-    const getParents = (parent?: property): string[] => {
-        if (!parent) return []
-        let response = getParents(parent.parent)
-        response.push(parent.slug)
-        return response
-    }
-
-    const handleTextChange = (property: property, value: string) => {
-        let path = ''
-        let parents = getParents(property)
-        parents.forEach((element, index) => {
-            if (index === 0) path = element
-            else path += `.${element}`
-        });
-        setResponse({ path, value })
-    }
-
-    const onDeleteArray = (property: property) => {
-        let parents = getParents(property), path = ''
-        parents.forEach((element, index) => {
-            if (index === 0) path = element
-            else path += `.${element}`
-        });
-        let response = _.omit(properties, path)
-        setThisProperties(response)
-        console.log("response", response)
-    }
     function FormComponent(properties: Record<string, property>): Record<string, React.JSX.Element> {
         let response: Record<string, React.JSX.Element> = {}
-        let child: Record<string, React.JSX.Element> = {}, childElement: React.JSX.Element[] = []
         for (const [key, value] of Object.entries(properties)) {
             if (!value) return response
             switch (value.datatype) {
                 case 'textField':
-                    response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={val => handleTextChange(value, val)} />
+                    response[key] =
+                        <Input key={key}
+                            label={value.name}
+                            defaultValue={value.value}
+                            onValueChange={onChange ? (val => onChange(value, val)) : undefined}
+                            isDisabled={!editable} />
                     break;
                 case "multiline":
-                    response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={val => handleTextChange(value, val)} />
+                    response[key] =
+                        <Input key={key}
+                            label={value.name}
+                            defaultValue={value.value}
+                            onValueChange={onChange ? (val => onChange(value, val)) : undefined} 
+                            isDisabled={!editable} />
                     break;
                 case "url":
-                    response[key] = <Input key={key} label={value.name} defaultValue={value.value} onValueChange={val => handleTextChange(value, val)} />
+                    response[key] =
+                        <Input key={key}
+                            label={value.name}
+                            defaultValue={value.value}
+                            onValueChange={onChange ? (val => onChange(value, val)) : undefined} 
+                            isDisabled={!editable} />
                     break;
                 case "map":
-                    if (value.properties) {
-                        Object.entries(value.properties).map((entry, i) => {
-                            const [inKey, inValue] = entry
-                            inValue.parent = value
-                            child[inKey] = FormComponent({ [inKey]: inValue })[inKey]
-                            if (child[inKey] !== undefined) {
-                                childElement.push(<div style={{ marginBottom: "10px" }} key={`prop-${i}`}>{child[inKey]}</div>)
-                            }
-                        })
-                    }
-                    response[key] = <MapComponent key={key} name={value.name} child={childElement} />
+                    response[key] =
+                        <MapComponent key={key}
+                            name={value.name}
+                            property={{ ...value }}
+                            MapComponent={FormComponent} />
                     break;
                 case "list":
-                    if (value.of?.value) {
-                        value.of.value.forEach((inValue, index) => {
-                            childElement.push(
-                                <AccordionItem key={`accor${index}`} textValue={`${index}`}
-                                    subtitle={<div className="flex justify-between"><p>{index + 1}</p><Link onPress={_ => onDeleteArray({ slug: `[${index}]`, name: "", datatype: "", parent: value })}><FaTrash /></Link></div>} >
-                                    {typeof inValue === "string" ?
-                                        <Input key={`elem-${index}`} value={inValue} onValueChange={val => handleTextChange(value, val)} />
-                                        :
-                                        Object.entries(inValue).map((entry, i) => {
-                                            const [inKey, inValue] = entry
-                                            let entry2 = { ...inValue, parent: { slug: `[${index}]`, name: "", datatype: "", parent: value } }
-                                            return <div style={{ marginBottom: "10px" }} key={`prop-${i}`}>
-                                                {FormComponent({ [inKey]: entry2 })[inKey]}
-
-                                            </div>
-                                        })
-                                    }
-                                </AccordionItem>
-                            )
-                        });
-
-                    }
-                    response[key] = <ListComponent key={key} name={value.name} child={childElement} />
+                    response[key] =
+                        <ListComponent key={key}
+                            name={value.name}
+                            property={{ ...value }}
+                            MapComponent={FormComponent}
+                            onChange={onChange}
+                            onDelete={onDeleteList}
+                            editable={editable} />
                     break;
                 default:
                     break;
@@ -120,6 +149,7 @@ export function inputsHook(properties: Record<string, property>): [Record<string
         }
         return response
     }
-
-    return [inputs, response]
+    return (
+        <div>{Object.values(FormComponent(parsePropertyValues(context.scheme, context.value)))}</div>
+    )
 }

@@ -1,13 +1,14 @@
 import { Accordion, AccordionItem, Button, Card, CardBody, CardHeader, getKeyValue, Input, Link, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Textarea, useDisclosure } from "@heroui/react"
 import { useParams } from "react-router-dom"
 import useSessionStorage from "../../shared/hooks/useSessionStorage"
-import { parsePropertyValues, property, scheme } from "../types"
+import { parsePropertyValues, property, PropertyValues, scheme } from "../types"
 import { useEffect, useMemo, useState } from "react"
 import DefaultLayout from "../layouts/default"
 import { contentNew } from "../config/site"
 import { FaGear } from "react-icons/fa6"
 import { FaTrash } from "react-icons/fa"
 import TableDrawer from "../components/drawers/tableDrawer"
+import { useDispatchDocument, useDocument } from "../../shared/context/documentContext"
 
 export default function SchemeTable() {
     const { path } = useParams()
@@ -23,16 +24,34 @@ export default function SchemeTable() {
     const [rows, setRows] = useState<Array<Record<string, React.JSX.Element | string>>>([])
 
     const [filterValue, setFilterValue] = useState('')
-    const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set([]))
-    const initValue = useMemo(() => { return parseProperties[0] != undefined ? parseProperties[0] : properties }, [properties, parseProperties])
+    const [selectedKeys, setSelectedKeys] = useState<Array<string>>([])
+    const dispatchContext = useDispatchDocument()
+
+    const handleOnSelectionChange = (e: Set<string>) => {
+        const array = Array.from(e)
+        setSelectedKeys(array)
+        if (array.length > 0) {
+            let key = array[array.length - 1]
+            dispatchContext({
+                type: 'VALUES',
+                payload: contentNew[Number(key)]
+            })
+        }
+    }
 
     useEffect(() => {
+        dispatchContext({
+            type: 'SCHEME',
+            payload: properties
+        })
+        // Set the columns for the table
         const responseColumns: Array<{ key: string, label: string, property: property }> = []
         for (let key in properties) {
             responseColumns.push({ key: properties[key].slug, label: properties[key].name, property: properties[key] })
         }
         setColumns(responseColumns)
 
+        // Set the rows for the table
         if (properties) {
             let responseRows: Array<Record<string, React.JSX.Element | string>> = []
             let responseParseProperties: Array<Record<string, property>> = []
@@ -78,7 +97,7 @@ export default function SchemeTable() {
                     </div>
                 </header>
                 {columns.length > 0 ?
-                    <Table aria-label="Example static collection table" selectionMode="multiple" selectedKeys={selectedKeys} onSelectionChange={e => setSelectedKeys(e as Set<string>)}>
+                    <Table aria-label="Example static collection table" selectionMode="multiple" selectedKeys={selectedKeys} onSelectionChange={value => handleOnSelectionChange(value as Set<string>)}>
                         <TableHeader columns={columns}>
                             {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
                         </TableHeader>
@@ -96,7 +115,7 @@ export default function SchemeTable() {
             </section>
             {
                 properties ?
-                    <TableDrawer {...{disclosure, name,  initValue}} />
+                    <TableDrawer {...{ disclosure, name }} />
                     : null
             }
         </DefaultLayout>

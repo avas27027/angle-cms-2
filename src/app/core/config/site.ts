@@ -184,5 +184,22 @@ export const contentNew = [
         }
       ]
     }
+  },
+  {
+    nombre: "Prueba 2",
+    path: "prueba_2",
+    banner: {
+      titulo: "titulo 2",
+      slider: [
+        {
+          imagen: "imagen 1",
+          descripcion: "desc 1"
+        },
+        {
+          imagen: "imagen 2",
+          descripcion: "desc 2"
+        }
+      ]
+    }
   }
 ] as PropertyValues[]

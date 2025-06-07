@@ -1,24 +1,54 @@
 import React, { useEffect, useReducer } from 'react';
 import { UseDisclosureReturn } from "@heroui/use-disclosure";
 import { Button, Drawer, DrawerBody, DrawerContent, DrawerFooter, DrawerHeader, Input, Link } from '@heroui/react';
-import { property, PropertyValues } from '../../types';
-import { inputsHook} from '../inputs/inputsComponents';
+import { parsePropertyValues, property, PropertyValues } from '../../types';
+import { InputsComponents } from '../inputs/inputsComponents';
+import _ from 'lodash';
+import { useDispatchDocument, useDocument } from '../../../shared/context/documentContext';
 
 interface TableDrawerProps {
     disclosure: UseDisclosureReturn
     title?: string;
-    initValue: Record<string, property>;
 }
 
-const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, initValue }) => {
-    const handleProperty = (state: PropertyValues, newState: Partial<PropertyValues>): PropertyValues => ({ ...state, ...newState })
-    const [state, dispatch] = useReducer(handleProperty, {} as PropertyValues)
+const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title }) => {
     const { isOpen, onOpenChange } = disclosure;
-    const [inputs, response] = inputsHook({...initValue})
-    useEffect(() => {
-        console.log("state", initValue)
-        console.log("response", response)
-    }, [response])
+    const context = useDocument()
+    const dispatch = useDispatchDocument()
+
+    const getParents = (parent?: property): string[] => {
+        if (!parent) return []
+        let response = getParents(parent.parent)
+        response.push(parent.slug)
+        return response
+    }
+
+    const onDeleteArray = (property: property) => {
+        let parents = getParents(property), path = ''
+        let index = _.parseInt(_.trim(parents[parents.length - 1], '[]'))
+        parents.pop() // Remove the last element if it is an array index
+        parents.forEach((element, index) => {
+            if (index === 0) path = element
+            else path += `.${element}`
+        });
+        let target = _.get(context.value, path)
+        if (Array.isArray(target)) target = _.remove(target, (_, i) => i !== index)
+        let response = _.set(context.value, path, target)
+        dispatch({
+            type: 'VALUES',
+            payload: response
+        })
+    }
+
+    const handleTextChange = (property: property, value: string) => {
+        let parents = getParents(property), path = ''
+        parents.forEach((element, index) => {
+            if (index === 0) path = element
+            else path += `.${element}`
+        });
+        let response = _.set(context.value, path, value)
+        console.log(response)
+    }
 
     return (
         <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
@@ -29,7 +59,7 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, initValue 
                             <h1 className="text-2xl font-bold">{title}</h1>
                         </DrawerHeader>
                         <DrawerBody className="p-4">
-                            {inputs ? Object.values(inputs) : null}
+                            <InputsComponents {...{ onChange: handleTextChange, onDeleteList: onDeleteArray, editable: true }} />
                         </DrawerBody>
                         <DrawerFooter className="flex justify-end">
                             <Link color='danger' onPress={onClose}>Cancel</Link>
@@ -45,18 +75,3 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, initValue 
 
 
 export default TableDrawer;
-
-
-const addToObject = (response: PropertyValues, parents: string[]): PropertyValues | PropertyValues[] => {
-    if (parents.length <= 1) return {}
-    // Set the last element as the value
-    if (parents.length === 2) { response[parents[1]] = parents[0]; return response }
-    let current = parents.pop()!
-    let next = parents[parents.length - 1]
-    // Check if is a list, because the next element is a number
-    if (!isNaN(Number(next)) && !isNaN(parseFloat(next))) {
-        (response[current] as PropertyValues[])[Number(next)] = (addToObject({ ...response[current] as PropertyValues }, parents) as PropertyValues)[next] as PropertyValues
-    }
-    else response[current] = { ...response[current] as PropertyValues, ...addToObject({ ...response[current] as PropertyValues }, parents) }
-    return response
-}

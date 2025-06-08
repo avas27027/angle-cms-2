@@ -50,6 +50,25 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title }) => {
         console.log(response)
     }
 
+    const onAddArray = (property: property) => {
+        let parents = getParents(property), path = ''
+        parents.forEach((element, index) => {
+            if (index === 0) path = element
+            else path += `.${element}`
+        });
+        let target = _.get(context.value, path) as PropertyValues[]
+        let newValue: PropertyValues = {}
+        Object.keys(property.of?.properties || {}).forEach((key) => {
+            newValue[key] = ''
+        })
+        target.push(newValue)
+        let response = _.set(context.value, path, target)
+        dispatch({
+            type: 'VALUES',
+            payload: response
+        })
+    }
+
     return (
         <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
             <DrawerContent>
@@ -59,7 +78,10 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title }) => {
                             <h1 className="text-2xl font-bold">{title}</h1>
                         </DrawerHeader>
                         <DrawerBody className="p-4">
-                            <InputsComponents {...{ onChange: handleTextChange, onDeleteList: onDeleteArray, editable: true }} />
+                            <InputsComponents onChange={handleTextChange}
+                                onDeleteList={onDeleteArray}
+                                onAdd={onAddArray}
+                                editable />
                         </DrawerBody>
                         <DrawerFooter className="flex justify-end">
                             <Link color='danger' onPress={onClose}>Cancel</Link>

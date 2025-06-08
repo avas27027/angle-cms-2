@@ -40,9 +40,10 @@ type LisComponentType = {
     MapComponent: (properties: Record<string, property>) => Record<string, React.JSX.Element>,
     onDelete?: (property: property) => void,
     onChange?: (property: property, value: string) => void,
+    onAdd?: (property:property) => void,
     editable?: boolean
 }
-export const ListComponent: React.FC<LisComponentType> = ({ name, property, onChange, onDelete, MapComponent, editable }) => {
+export const ListComponent: React.FC<LisComponentType> = ({ name, property, onChange, onDelete, onAdd, MapComponent, editable }) => {
     const childs = useMemo(() => {
         let childElement: React.JSX.Element[] = []
         if (property.of?.value === undefined) return childElement
@@ -83,7 +84,7 @@ export const ListComponent: React.FC<LisComponentType> = ({ name, property, onCh
                         childs : <AccordionItem title="No items"></AccordionItem>
                     }
                 </Accordion>
-                <Button>+ Add element</Button>
+                <Button onPress={onAdd ? (_ => onAdd(property)) : undefined} className={editable ? '' : 'hidden'}>+ Add element</Button>
             </CardBody>
         </Card>
     )
@@ -91,10 +92,11 @@ export const ListComponent: React.FC<LisComponentType> = ({ name, property, onCh
 
 type InputsComponentsProps = {
     onDeleteList?: (property: property) => void,
-    onChange?: (property: property, value: string) => void
+    onChange?: (property: property, value: string) => void,
+    onAdd?: (property: property) => void,
     editable?: boolean
 }
-export const InputsComponents: React.FC<InputsComponentsProps> = ({ onDeleteList, onChange, editable }) => {
+export const InputsComponents: React.FC<InputsComponentsProps> = ({ onDeleteList, onChange, onAdd, editable }) => {
     const context = useDocument()
 
     function FormComponent(properties: Record<string, property>): Record<string, React.JSX.Element> {
@@ -141,6 +143,7 @@ export const InputsComponents: React.FC<InputsComponentsProps> = ({ onDeleteList
                             MapComponent={FormComponent}
                             onChange={onChange}
                             onDelete={onDeleteList}
+                            onAdd={onAdd}
                             editable={editable} />
                     break;
                 default:

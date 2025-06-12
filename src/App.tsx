@@ -2,7 +2,7 @@ import { Route, Routes } from "react-router-dom";
 
 import IndexPage from "./app/core/routes/index.tsx";
 import Views from "./app/core/routes/views/views.tsx";
-import SchemeTable from "./app/core/routes/schemeTable.tsx";
+import SchemeTable from "./app/core/routes/schemeTable/schemeTable.tsx";
 import { DocumentProvider } from "./app/shared/context/documentContext.tsx";
 
 function App() {

@@ -1,8 +1,7 @@
-import React, { useEffect, useReducer } from 'react';
 import { UseDisclosureReturn } from "@heroui/use-disclosure";
-import { Button, Drawer, DrawerBody, DrawerContent, DrawerFooter, DrawerHeader, Input, Link } from '@heroui/react';
+import { Button, Drawer, DrawerBody, DrawerContent, DrawerFooter, DrawerHeader, Link } from '@heroui/react';
 import { parsePropertyValues, property, PropertyValues } from '../../types';
-import { InputsComponents } from '../inputs/inputsComponents';
+import { FormComponent } from '../inputs/inputsComponents';
 import _ from 'lodash';
 import { useDispatchDocument, useDocument } from '../../../shared/context/documentContext';
 
@@ -68,7 +67,6 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title }) => {
             payload: response
         })
     }
-
     return (
         <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
             <DrawerContent>
@@ -78,10 +76,7 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title }) => {
                             <h1 className="text-2xl font-bold">{title}</h1>
                         </DrawerHeader>
                         <DrawerBody className="p-4">
-                            <InputsComponents onChange={handleTextChange}
-                                onDeleteList={onDeleteArray}
-                                onAdd={onAddArray}
-                                editable />
+                            {Object.values(FormComponent(parsePropertyValues(context.scheme, context.value), true, handleTextChange, onDeleteArray, onAddArray))}
                         </DrawerBody>
                         <DrawerFooter className="flex justify-end">
                             <Link color='danger' onPress={onClose}>Cancel</Link>

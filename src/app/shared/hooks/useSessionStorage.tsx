@@ -1,7 +1,7 @@
-import { type scheme } from "../../core/types";
+import { PropertyValues, type scheme } from "../../core/types";
 import { useSyncExternalStore } from "react";
 
-const useSessionStorage = (storageName: 'newCollection' | 'collections') => {
+const useSessionStorage = (storageName: 'newCollection' | 'collections' | 'tableValues') => {
     const item = useSyncExternalStore(subscribe, getSnapshot, () => undefined);
 
     //Return the current value from the browser API
@@ -20,7 +20,7 @@ const useSessionStorage = (storageName: 'newCollection' | 'collections') => {
         window.dispatchEvent(new StorageEvent("custom-storage-event-name"));
     };
 
-    return [value as scheme | scheme[], setValue] as const;
+    return [value as scheme | scheme[] | PropertyValues[], setValue] as const;
 };
 
 function subscribe(callback: () => void) {

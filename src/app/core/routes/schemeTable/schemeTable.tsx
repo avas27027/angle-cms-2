@@ -68,6 +68,12 @@ export default function SchemeTable() {
         }
     }
 
+    const handleOnDelete = () => {
+        if (selectedKeys.length === 0 || !storageValues) return;
+        let newValues = (storageValues as PropertyValues[]).filter((_, i) => !selectedKeys.includes(`${i}`))
+        setStorageValues(newValues)
+    }
+
     return (
         <DefaultLayout title="Belleza y Salud">
             <section>

@@ -140,6 +140,7 @@ export const collections: Array<scheme> = [
     path: "nueva_coleccion",
     //view: "catalog",
     properties: {
+      id: { name: "id", slug: "id", description: "", url: "", datatype: "textField", properties: {} },
       nombre: { name: "Nombre", slug: "nombre", description: "", url: "", datatype: "textField", properties: {} },
       path: { name: "path", slug: "path", description: "", url: "", datatype: "url", properties: {} },
       banner: {
@@ -169,6 +170,25 @@ export const collections: Array<scheme> = [
 ]
 export const contentNew = [
   {
+    id: "prueba_21",
+    nombre: "Prueba 21",
+    path: "prueba_21",
+    banner: {
+      titulo: "titulo 21",
+      slider: [
+        {
+          imagen: "imagen 1",
+          descripcion: "desc 1"
+        },
+        {
+          imagen: "imagen 2",
+          descripcion: "desc 2"
+        }
+      ]
+    }
+  },
+  {
+    id: "prueba_1",
     nombre: "Prueba 1",
     path: "prueba_1",
     banner: {
@@ -186,10 +206,11 @@ export const contentNew = [
     }
   },
   {
-    nombre: "Prueba 2",
-    path: "prueba_2",
+    id: "prueba_3",
+    nombre: "Prueba 3",
+    path: "prueba_3",
     banner: {
-      titulo: "titulo 2",
+      titulo: "titulo 3",
       slider: [
         {
           imagen: "imagen 1",

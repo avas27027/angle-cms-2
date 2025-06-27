@@ -71,7 +71,12 @@ const ListComponent: React.FC<LisComponentType> = ({ name, property, onChange, o
                             </Link>
                         </div>} >
                     {typeof inValue === "string" ?
-                        <Input isDisabled={!editable} key={`elem-${index}`} value={inValue} onValueChange={onChange ? (val => onChange(property, val)) : undefined} />
+                        <Input
+                            isDisabled={!editable}
+                            key={`elem-${index}`}
+                            defaultValue={inValue}
+                            value={!editable ? inValue : undefined}
+                            onValueChange={onChange ? (val => onChange(property, val)) : undefined} />
                         :
                         Object.entries(inValue).map((entry, i) => {
                             const [inKey, inValue] = entry
@@ -113,12 +118,17 @@ export function FormComponent(
     let response: Record<string, React.JSX.Element> = {}
     for (const [key, value] of Object.entries(properties)) {
         if (!value) return response
+        if (key === 'id') {
+            response[key] = <Input key={key} label={value.name} defaultValue={value.value} isDisabled={true} />
+            continue;
+        }
         switch (value.datatype) {
             case 'textField':
                 response[key] =
                     <Input key={key}
                         label={value.name}
                         defaultValue={value.value}
+                        value={!editable ? value.value : undefined}
                         onValueChange={onChange ? (val => onChange(value, val)) : undefined}
                         isDisabled={!editable} />
                 break;
@@ -135,6 +145,7 @@ export function FormComponent(
                     <Input key={key}
                         label={value.name}
                         defaultValue={value.value}
+                        value={!editable ? value.value : undefined}
                         onValueChange={onChange ? (val => onChange(value, val)) : undefined}
                         isDisabled={!editable} />
                 break;

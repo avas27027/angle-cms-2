@@ -4,16 +4,19 @@ import { parsePropertyValues, property, PropertyValues } from '../../types';
 import { FormComponent } from '../inputs/inputsComponents';
 import _ from 'lodash';
 import { useDispatchDocument, useDocument } from '../../../shared/context/documentContext';
+import { useState } from "react";
 
 interface TableDrawerProps {
     disclosure: UseDisclosureReturn
     title?: string;
+    onSave: (values: PropertyValues | null) => void;
 }
 
-const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title }) => {
+const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, onSave }) => {
     const { isOpen, onOpenChange } = disclosure;
     const context = useDocument()
     const dispatch = useDispatchDocument()
+    const [response, setResponse] = useState<PropertyValues | null>(null)
 
     const getParents = (parent?: property): string[] => {
         if (!parent) return []
@@ -46,7 +49,7 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title }) => {
             else path += `.${element}`
         });
         let response = _.set(context.value, path, value)
-        console.log(response)
+        setResponse(response)
     }
 
     const onAddArray = (property: property) => {
@@ -55,7 +58,7 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title }) => {
             if (index === 0) path = element
             else path += `.${element}`
         });
-        let target = _.get(context.value, path) as PropertyValues[]
+        let target = _.get(context.value, path) as PropertyValues[] || []
         let newValue: PropertyValues = {}
         Object.keys(property.of?.properties || {}).forEach((key) => {
             newValue[key] = ''
@@ -76,11 +79,11 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title }) => {
                             <h1 className="text-2xl font-bold">{title}</h1>
                         </DrawerHeader>
                         <DrawerBody className="p-4">
-                            {Object.values(FormComponent(parsePropertyValues(context.scheme, context.value), true, handleTextChange, onDeleteArray, onAddArray))}
+                            {Object.values(FormComponent(parsePropertyValues(context.scheme, Object.keys(context.value).length > 0 ? context.value : {}), true, handleTextChange, onDeleteArray, onAddArray))}
                         </DrawerBody>
                         <DrawerFooter className="flex justify-end">
                             <Link color='danger' onPress={onClose}>Cancel</Link>
-                            <Button>Save</Button>
+                            <Button onPress={_ => {onSave(response); onClose()}}>Save</Button>
                         </DrawerFooter>
                     </>
 

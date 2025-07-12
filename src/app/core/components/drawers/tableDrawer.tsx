@@ -9,9 +9,25 @@ import { useState } from "react";
 interface TableDrawerProps {
     disclosure: UseDisclosureReturn
     title?: string;
-    onSave: (values: PropertyValues | null) => void;
+    onSave: (values: PropertyValues) => void;
 }
 
+/**
+ * TableDrawer is a React functional component that renders a drawer interface for editing table-like data structures.
+ * 
+ * @param {TableDrawerProps} props - The props for the TableDrawer component.
+ * @param {Disclosure} props.disclosure - Controls the open/close state of the drawer.
+ * @param {string} props.title - The title displayed at the top of the drawer.
+ * @param {(response: PropertyValues | null) => void} props.onSave - Callback invoked when the user saves changes.
+ * 
+ * @remarks
+ * - Integrates with a document context to read and update values.
+ * - Supports adding, editing, and deleting array items within the table structure.
+ * - Uses utility functions to manage nested property paths.
+ * - Renders form components dynamically based on the provided schema and current values.
+ * 
+ * @returns {JSX.Element} The rendered drawer component.
+ */
 const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, onSave }) => {
     const { isOpen, onOpenChange } = disclosure;
     const context = useDocument()
@@ -23,6 +39,14 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, onSave }) 
         let response = getParents(parent.parent)
         response.push(parent.slug)
         return response
+    }
+
+    const handleOnSave = (onClose: () => void) => {
+        if (response) {
+            if (response.id == null) response.id = _.uniqueId('id_')
+            onSave(response)
+            onClose()
+        }
     }
 
     const onDeleteArray = (property: property) => {
@@ -42,6 +66,7 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, onSave }) 
         })
     }
 
+    // This function is used to handle text changes in input fields
     const handleTextChange = (property: property, value: string) => {
         let parents = getParents(property), path = ''
         parents.forEach((element, index) => {
@@ -52,6 +77,7 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, onSave }) 
         setResponse(response)
     }
 
+    // This function is used to add a new item to an array property
     const onAddArray = (property: property) => {
         let parents = getParents(property), path = ''
         parents.forEach((element, index) => {
@@ -65,10 +91,7 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, onSave }) 
         })
         target.push(newValue)
         let response = _.set(context.value, path, target)
-        dispatch({
-            type: 'VALUES',
-            payload: response
-        })
+        dispatch({ type: 'VALUES', payload: response })
     }
     return (
         <Drawer isOpen={isOpen} onOpenChange={onOpenChange}>
@@ -83,7 +106,7 @@ const TableDrawer: React.FC<TableDrawerProps> = ({ disclosure, title, onSave }) 
                         </DrawerBody>
                         <DrawerFooter className="flex justify-end">
                             <Link color='danger' onPress={onClose}>Cancel</Link>
-                            <Button onPress={_ => {onSave(response); onClose()}}>Save</Button>
+                            <Button onPress={_ => { handleOnSave(onClose) }}>Save</Button>
                         </DrawerFooter>
                     </>
 

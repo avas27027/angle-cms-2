@@ -13,83 +13,51 @@ import { TableComponent } from "./tableComponent"
 import { FormComponent } from "../../components/inputs/inputsComponents"
 import _ from 'lodash';
 
+export const parseProperties = (values: PropertyValues[], scheme: Record<string, property>) => {
+    if (!values || !scheme || !Array.isArray(values)) return [];
+    let responseParseProperties: Array<Record<string, property>> = [];
+    values.forEach((value) => {
+        responseParseProperties.push(parsePropertyValues(scheme, value))
+    })
+    return responseParseProperties
+}
+const defineColumns = (properties: Record<string, property>) => {
+    let responseColumns: Array<{ key: string, label: string, property: property }> = [];
+    for (let key in properties) {
+        responseColumns.push({ key: properties[key].slug, label: properties[key].name, property: properties[key] })
+    }
+    return responseColumns
+}
 export default function SchemeTable() {
     const { path } = useParams()
     const disclosure = useDisclosure()
     const [storage] = useSessionStorage("collections")
     const [storageValues, setStorageValues] = useSessionStorage("tableValues")
-    const dispatch = useDispatchDocument()
-
-    const collection = useMemo(() => {
-        return (storage as scheme[]).filter((value) => { if (value.path === path) return value })[0]
-    }, [path])
-
-    const parseProperties = (values: PropertyValues[]) => {
-        if (!values || !collection.properties || !Array.isArray(values)) return [];
-        let responseParseProperties: Array<Record<string, property>> = [];
-        values.forEach((value) => {
-            responseParseProperties.push(parsePropertyValues(collection.properties!, value))
-        })
-        return responseParseProperties
-    }
-
-    const columns = useMemo(() => {
-        const responseColumns: Array<{ key: string, label: string, property: property }> = []
-        for (let key in collection.properties!) {
-            responseColumns.push({ key: collection.properties[key].slug, label: collection.properties[key].name, property: collection.properties[key] })
-        }
-        return responseColumns
-    }, [collection])
-
     const [rows, setRows] = useState<Array<Record<string, React.JSX.Element | string>>>([])
     const [filterValue, setFilterValue] = useState('')
     const [selectedKeys, setSelectedKeys] = useState<Array<string>>([])
     const dispatchContext = useDispatchDocument()
+    const collection = (storage as scheme[]).filter((value) => { if (value.path === path) return value })[0]
 
     useEffect(() => {
         let responseRows: Array<Record<string, React.JSX.Element | string>> = [];
-        parseProperties(storageValues as PropertyValues[]).forEach((parsed) => {
+        parseProperties(storageValues as PropertyValues[], collection.properties!).forEach((parsed) => {
             responseRows.push({ key: `${parsed.id.value}`, ...FormComponent(parsed) })
         })
         setRows(responseRows)
         setStorageValues(contentNew)
-        dispatchContext({
-            type: 'SCHEME',
-            payload: collection.properties!
-        })
+        dispatchContext({ type: 'SCHEME', payload: collection.properties! })
     }, [])
-    const handleSave = (values: PropertyValues | null) => {
-        if (values) {
-            let storage = (storageValues as PropertyValues[])
-            if (values.id != null) {
-                let responseRows: Array<Record<string, React.JSX.Element | string>> = [];
-                let updateValues: PropertyValues[] = []
-                storage.forEach((value => {
-                    if (value.id === values.id) {
-                        updateValues.push(values)
-                    } else {
-                        updateValues.push(value)
-                    }
-                }))
-                console.log(updateValues)
-                setStorageValues(updateValues)
-                parseProperties(updateValues).forEach((parsed) => {
-                    responseRows.push({ key: `${parsed.id.value}`, ...FormComponent(parsed) })
-                })
-                console.log(responseRows)
-                setRows(responseRows)
-            }
-            else {
-                values.id = _.uniqueId('id_')
-                storage.push(values)
-                let responseRows: Array<Record<string, React.JSX.Element | string>> = [];
-                parseProperties(storage).forEach((parsed) => {
-                    responseRows.push({ key: `${parsed.id.value}`, ...FormComponent(parsed) })
-                })
-                setRows(responseRows)
-                setStorageValues(storage)
-            }
-        }
+    const handleSave = (values: PropertyValues) => {
+        let storage = (storageValues as PropertyValues[]), responseRows: Array<Record<string, React.JSX.Element | string>> = [];
+        let position = storage.findIndex((value) => value.id === values.id)
+        if (position === -1) storage.push(values)
+        else storage[position] = values
+        parseProperties(storage, collection.properties!).forEach((parsed) => {
+            responseRows.push({ key: `${parsed.id.value}`, ...FormComponent(parsed) })
+        })
+        setStorageValues(storage)
+        setRows(responseRows)
     }
 
     const handleOnSelectionChange = (e: Set<string>) => {
@@ -98,10 +66,7 @@ export default function SchemeTable() {
         if (array.length > 0) {
             let key = array[array.length - 1]
             let selectedValue = (storageValues as PropertyValues[]).find((value) => value.id === key)
-            dispatchContext({
-                type: 'VALUES',
-                payload: selectedValue || {}
-            })
+            dispatchContext({ type: 'VALUES', payload: selectedValue || {} })
         }
     }
 
@@ -114,12 +79,8 @@ export default function SchemeTable() {
     }
 
     const handleOnAdd = () => {
-        dispatch({
-            type: 'VALUES',
-            payload: {}
-        })
+        dispatchContext({ type: 'VALUES', payload: {} })
         disclosure.onOpen()
-
     }
 
     return (
@@ -139,9 +100,9 @@ export default function SchemeTable() {
                 {
                     collection.properties && parseProperties.length > 0 ?
                         <TableComponent
-                            columns={columns}
+                            columns={defineColumns(collection.properties!)}
                             rows={rows}
-                            parseProperties={parseProperties(storageValues as PropertyValues[])}
+                            parseProperties={parseProperties(storageValues as PropertyValues[], collection.properties!)}
                             onSelectionChange={handleOnSelectionChange}
                             filterValue={filterValue}
                         />

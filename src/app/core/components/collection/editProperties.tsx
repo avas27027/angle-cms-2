@@ -8,6 +8,8 @@ import './editProperties.scss';
 import { FaGear } from "react-icons/fa6"
 import ModalNewProperty from "../modals/modalNewProperty"
 import useSessionStorage from "../../../shared/hooks/useSessionStorage"
+import { addDoc, collection, doc, setDoc } from "firebase/firestore"
+import firebase from "../../config/firebase"
 
 export type ModalType = { mode: string, callback: (mode: string, property: property) => void, initProperty?: property }
 function deleteKey(property: property) {
@@ -94,6 +96,7 @@ const EditProperties: React.FC<{ close: () => void }> = ({ close }) => {
         // Se agrega la nueva coleccion al session storage
         const collections: Array<scheme> = storageCollections ? storageCollections as scheme[] : []
         setStorageCollections([...collections, newCollection])
+        //addDoc(collection(firebase.db, "cms_collections"), newCollection)
 
         // Se reinician los valores de la coleccion
         setStorage({})

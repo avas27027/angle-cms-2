@@ -1,7 +1,7 @@
 
 import { Button } from "@heroui/react";
 import DefaultLayout from "../layouts/default.tsx";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
 import { useState } from "react";
 import Firebase from "../config/firebase.tsx";
 
@@ -31,11 +31,19 @@ export default function IndexPage() {
         // ...
       });
   }
+  const handelSignOut = () => {
+    signOut(auth).then(() => {
+      // Sign-out successful.
+    }).catch((error) => {
+      // An error happened.
+    });
+  }
   return (
     <DefaultLayout title="Titulo">
       <section>
         <h1 className="">user: {userName}</h1>
         <Button onPress={signIn}>Login</Button>
+        <Button onPress={handelSignOut}>LogOut</Button>
       </section>
     </DefaultLayout>
   );
